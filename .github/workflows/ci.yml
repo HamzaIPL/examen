@@ -1,0 +1,42 @@
+name: Pipeline Continuous Integration
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 14
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Vérification du formatage du code avec Prettier
+      run: npm run prettier
+
+    - name: Lint du code
+      run: npm run lint
+
+    - name: Tests avec Jest et vérification de la couverture
+      run: npm test -- --coverage
+
+    - name: Vérification de la couverture Jest
+      run: |
+          coverage=$(cat ./coverage/coverage-summary.json | jq -r '.total.lines.pct')
+          if (( $(echo "$coverage < 70" | bc -l) )); then
+            echo "La couverture Jest est inférieure à 70%."
+            exit 1
+          fi
+
+    - name: Construction du code
+      run: npm run build
